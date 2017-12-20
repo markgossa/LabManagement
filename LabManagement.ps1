@@ -1,6 +1,6 @@
 $cred = Get-Credential root 
 Connect-VIServer -Server 192.168.0.3 -Credential $cred -Force -WarningAction SilentlyContinue | Out-Null
-$TestLabVMs = 'litdc01','litex01','litex02','litex03'
+$TestLabVMs = 'litex02','litex03'
 
 function WaitforVMShutdown
 {
@@ -29,9 +29,12 @@ function New-LabSnapshot
     Start-VM -VM $TestLabVMs
 }
 
-# Prepare lab by taking a new snapshot
-New-LabSnapshot
-
-# Work on lab 
-
-# Roll back if needed
+function Rollback-LabSnapshot
+{
+    foreach ($VM in $TestLabVMs)
+    {
+        $Snapshot = Get-Snapshot -VM $VM | Sort-Object -Property Created -Descending | Select-Object -First 1
+        Set-VM -VM $VM -Snapshot $Snapshot -Confirm:$false | Out-Null
+        Start-VM -VM $VM
+    }
+}
